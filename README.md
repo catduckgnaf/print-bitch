@@ -8,7 +8,7 @@ Print Bitch is an automated 3D printing pipeline designed for Discord. It remove
 
 Standard desktop 3D printing is built for hobbyists who enjoy tinkering with layer heights, tree supports, and temperature towers. It is terrible for anyone who just wants an object out of the printer.
 
-Print Bitch was built so Andrew's wife could see a model on MakerWorld, drop the URL into `#3d-printer` on Discord, and get a finished print without ever launching OrcaSlicer, selecting printer profiles, or guessing which spool is loaded in which slot.
+Print Bitch was built so catduck's wife could see a model on MakerWorld, drop the URL into `#3d-printer` on Discord, and get a finished print without ever launching OrcaSlicer, selecting printer profiles, or guessing which spool is loaded in which slot.
 
 ## How It Works in Discord
 
@@ -18,13 +18,13 @@ Everything happens inside a single Discord channel. The bot speaks in plain Engl
 
 A user posts a link or uploads a file into the `#3d-printer` channel:
 
-> **Jessica:** https://makerworld.com/en/models/931302-holder-for-post-it-notes
+> **Mrs catduck:** https://makerworld.com/en/models/931302-holder-for-post-it-notes
 
 ### 2. Instant receipt
 
 The bot responds in seconds with a plain English confirmation, an estimated preparation time, and a witty remark:
 
-> **Print Bitch:** Downloading the file from MakerWorld and prepping it for the printer, about 2 minutes. The desk organizer is already more structured than Andrew's weekend plans.
+> **Print Bitch:** Downloading the file from MakerWorld and prepping it for the printer, about 2 minutes. The desk organizer is already more structured than catduck's weekend plans.
 
 ### 3. Automated preparation and job card
 
