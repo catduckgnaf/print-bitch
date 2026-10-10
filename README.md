@@ -3,7 +3,17 @@
 Fast printing tools for ZMod AD5X, preserving direct Moonraker control and the existing OrcaSlicer Flatpak.
 
 ## Status
-Private project intake and issue tracker. No runtime code has been imported, implemented or printer validated here. Existing hardening remains paused pending reference research.
+Private project with a small, offline-testable Discord interaction-guard module. It caps clarification choices and limits identical terminal-command repeats within one identified turn. It does not control the printer, slicer, files, network, or live services, and it has not been installed or printer validated. Existing hardening remains paused pending reference research.
+
+## Tests
+
+Run the portable guard tests with Python 3.10 or newer:
+
+```sh
+python3 -m unittest discover -s tests -v
+```
+
+The module requires only the Python standard library. The test suite exercises the isolated guards without loading Hermes, Discord, printer state, Moonraker, or slicer integrations. These are portable guard primitives; they do not represent a complete Discord reliability audit or enable live intake behavior.
 
 ## MVP
 Exact-job/color regression, native same-color and same-material infinite spool fallback, installed-version ZMod compatibility, Discord reliability and latency preservation.
