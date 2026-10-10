@@ -1,67 +1,47 @@
 # Print Bitch
 
-Reliable Discord and AI integration framework for ZMod AD5X 3D printers.
+Discord intake and an AD5X print workflow for MakerWorld and Printables 3MF jobs.
 
-Print Bitch connects AI agents to Klipper and Moonraker 3D printers through Discord without getting stuck in runaway command loops, spamming mobile chat UIs, or breaking native printer firmware features.
+The code in this repository is a Hermes pre-tool hook. It is not a ZMod plugin and it does not talk to a printer. Slicing, color assignment, and print start live in the private AD5X skill that drives a stock OrcaSlicer Flatpak and Moonraker. That split is deliberate. A ZMod plugin runs on the printer as Klipper config. This hook runs in the agent, before a tool call.
 
-## Why Print Bitch
+## What is in this repository
 
-Connecting autonomous or conversational AI agents to 3D printers over Discord creates distinct failure modes:
+`plugins/print-feedback/__init__.py` registers two guards. Both are stdlib only.
 
-1. Infinite polling loops where an agent repeats the same command waiting for a print state change.
-2. Discord mobile UI breakage when an agent outputs long clarification lists that exceed visible screen real estate.
-3. Overengineered plugins that duplicate features already built into printer firmware.
+* Choice cap. On the Discord printer profile, a clarify question with more than four choices keeps the first four and says an Other path exists.
+* Repeat stop. The third identical terminal command in one turn is blocked. Distinct commands are not limited. Without a turn id, the guard does nothing.
 
-Print Bitch solves these problems by providing lightweight, deterministic interaction guards while delegating physical printer logic to native ZMod firmware and stock OrcaSlicer Flatpak.
+Tests are `python3 -m unittest discover -s tests -v`. They do not contact a printer, Discord, or the network.
 
-## Core Architecture
+`docs/AD5X-CONTRACT.md` records the ZMod same-color, same-material infinite-spool rule and the local extra checks. Native selection order and installed screen behavior are not verified here.
 
-### 1. Deterministic Discord Interaction Guards
+`docs/REUSE-MAP.md` and `references/manifest.json` pin five upstream archives by commit and SHA-256: mcp-3D-printer-server, orcaslicer-mcp, klipper-mcp, zmod, and bambufy. Those archives are not in this repo. Nothing from them is installed.
 
-Located in `plugins/print-feedback/__init__.py`, these pure Python standard library hooks register as agent pre tool call interceptors:
+## AD5X workflow this documents
 
-* **Choice Capping**: Automatically caps clarification question lists to 4 choices on Discord and appends notice that an Other path exists. This keeps interactive messages readable on phone screens.
-* **Command Loop Protection**: Detects identical terminal command executions within a single turn and halts the third repetition. This prevents agents from polling Moonraker or Klipper indefinitely.
+These behaviors are implemented in the printer skill, not in the files above. The skill target is a Flashforge AD5X on ZMod, 220 by 220 mm, stock OrcaSlicer Flatpak, direct Moonraker. No Prusa slicing path. No Room, no custom slicer fork, no MCP.
 
-### 2. Native ZMod AD5X Infinite Spool
+* MakerWorld and Printables links. A reposted link is a new intake. Old jobs, colors, and approvals are not reused.
+* 3MF plate inventory before any slice. Source triangles and transforms are kept. Author settings that Orca rejects are clamped in the job, never written back into the source file.
+* Multi-plate 3MF files merge onto one AD5X bed and slice once. Separate plates only when asked.
+* Color and slot assignment stays bound to that source. Slicer tools are not physical IFS slots. A link or a color choice is not permission to slice, upload, or start.
+* One-line preview after a model link and before color selection: what it is, estimated time, estimated filament. Missing numbers stay missing.
+* Job details after a real start: model, time plus warmup and finish, filament weight, slot, color, material, printer, nozzle, temperatures, calibration.
+* AD5X startup uses the installed ZMod macros. Native screen mode owns mesh and Z offset. Screenless mode is a separate checked state.
+* Print start is one shot after the bed is confirmed clear. A timed-out start is checked once and not retried.
+* Native infinite spool is the backup plan: same stored color and material. No agent polling loop. No Bambufy. Bambufy fights the native screen.
+* Spoolman is the inventory record once seeded. Physical sensors own presence. Automatic runout switching is not claimed.
 
-Rather than installing third party multi spool plugins like Bambufy, Print Bitch relies on native ZMod firmware logic:
+## Not a ZMod plugin
 
-* When multiple spools share matching color and material type, the printer switches spools automatically upon runout.
-* Bambufy was evaluated and rejected because it conflicts with the native AD5X touch screen.
-* The complete firmware compatibility contract is documented in `docs/AD5X-CONTRACT.md`.
+ZMod installs a plugin with `ENABLE_PLUGIN`, then runs that repo's `install.sh`. The plugin is Klipper config, usually `name.cfg`, plus optional `uninstall.sh` and `update.sh`. See the [ZMod plugin guide](https://wiki.zmod.link/Plugin/) and the [g28_tenz example](https://github.com/ghzserg/g28_tenz).
 
-### 3. Direct Moonraker and Stock Slicer Workflow
+This repository has none of that. Turning the Discord hook into `install.sh` would put agent policy on the printer, which is the wrong machine. A printer-side plugin would be a new Klipper extra with its own install scripts. Whether any of this workflow belongs there is tracked as an open issue, including a generic Klipper path that is not AD5X-only.
 
-Print Bitch avoids custom slicer forks or background daemon bloat:
+## Links
 
-* Preserves the standard OrcaSlicer Flatpak for slicing and tool mapping.
-* Direct Moonraker API control for print execution.
-* Zero third party Python dependencies required for guard primitives.
-
-## Running Tests
-
-Print Bitch includes an isolated test suite requiring only the Python standard library.
-
-Run tests:
-
-```sh
-python3 -m unittest discover -s tests -v
-```
-
-All 6 test cases verify choice truncation, command loop blocking, session isolation, and hook registration without connecting to live hardware.
-
-## Repository Layout
-
-* `plugins/print-feedback/`: Core interaction guard hooks for AI agent environments.
-* `tests/`: Portable unit tests for interaction guards.
-* `docs/AD5X-CONTRACT.md`: ZMod AD5X compatibility contract and infinite spool rules.
-* `docs/REUSE-MAP.md`: Architectural analysis of upstream references including ZMod, Bambufy, Orca MCP, and Klipper MCP.
-* `references/manifest.json`: Pinned cryptographic hashes of evaluated upstream projects.
-
-## Getting Started for ZMod Users
-
-1. Clone this repository into your agent environment or workspace.
-2. Register the hooks in your agent runtime using `plugins/print-feedback/register(ctx)` or environment variables.
-3. Configure your printer spools in ZMod with identical color and material names to enable automatic infinite spool fallback.
-4. Issue print instructions through your Discord bot with confidence that runaway agent loops will be caught before they spam your channel.
+* ZMod AD5X docs, pinned: [AD5X.md at 0017033](https://github.com/ghzserg/zmod/blob/001703371c90e228defce41bb4230b7fafd37fea/docs/en/AD5X.md)
+* ZMod: [ghzserg/zmod](https://github.com/ghzserg/zmod)
+* Plugin guide: [wiki.zmod.link/Plugin](https://wiki.zmod.link/Plugin/)
+* OrcaSlicer CLI: [CLI mode](https://github.com/OrcaSlicer/OrcaSlicer/wiki/cli_mode)
+* MakerWorld and Printables are the two source sites. Model files are downloaded per intake and are not stored here.
