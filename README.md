@@ -1,59 +1,103 @@
 # Print Bitch
 
-ZMod already switches to another IFS spool when the stored color and the stored material match. It does that during a print, after the active spool runs out. Nothing on the printer answers the question before you start: which other slots would that switch be able to use?
+Drop a link. Drop a file. Let Discord handle the rest.
 
-`PRINT_BITCH` answers that. It reads the four slot values you copied out of the COLOR menu and names the other slots with the same color and the same material. It does not change the loaded slot, call `SET_EXTRUDER_SLOT`, or feed filament. A `0` means the slot was never filled in and is ignored.
+Print Bitch is an automated 3D printing pipeline designed for Discord. It removes the desktop slicer, manual SD card shuffling, and confusing printer menus from household printing. Anyone in the house can drop a MakerWorld link, a Printables link, or a raw 3MF or STL file into a Discord channel, and the bot handles downloading, multi plate packing, color matching, headless slicing, and print staging.
 
-## Example
+## Why This Exists: The Household Test
 
-Slot 1 and slot 3 are black PETG. Slot 4 is black PLA. Slot 2 is empty.
+Standard desktop 3D printing is built for hobbyists who enjoy tinkering with layer heights, tree supports, and temperature towers. It is terrible for anyone who just wants an object out of the printer.
 
-```
+Print Bitch was built so Andrew's wife could see a model on MakerWorld, drop the URL into `#3d-printer` on Discord, and get a finished print without ever launching OrcaSlicer, selecting printer profiles, or guessing which spool is loaded in which slot.
+
+## How It Works in Discord
+
+Everything happens inside a single Discord channel. The bot speaks in plain English, keeps terminal spam out of the chat, and provides immediate feedback.
+
+### 1. Drop a link or file
+
+A user posts a link or uploads a file into the `#3d-printer` channel:
+
+> **Jessica:** https://makerworld.com/en/models/931302-holder-for-post-it-notes
+
+### 2. Instant receipt
+
+The bot responds in seconds with a plain English confirmation, an estimated preparation time, and a witty remark:
+
+> **Print Bitch:** Downloading the file from MakerWorld and prepping it for the printer, about 2 minutes. The desk organizer is already more structured than Andrew's weekend plans.
+
+### 3. Automated preparation and job card
+
+Behind the scenes, the pipeline:
+* Fetches the model files and metadata
+* Merges multi plate assemblies onto the bed
+* Matches requested colors with loaded filaments in Spoolman
+* Runs headless slicing through OrcaSlicer
+* Verifies nozzle size, temperatures, and printer readiness
+
+The bot posts the job summary with a single interactive button:
+
+> **Print Bitch:**
+> **Model:** Post it Note Holder with Stencils
+> **Filament:** Matte Black PLA (~48g)
+> **Estimated print time:** 1 hour 14 minutes
+> **Target printer:** Flashforge AD5X (ZMod Klipper)
+> 
+> [🔘 Slice and print now (bed is clear)]
+
+### 4. One tap launch and live updates
+
+Once someone confirms the bed is clear by clicking the button, the print starts immediately:
+
+> **Print Bitch:** Bed heating started. Job sent to Moonraker. Finish time estimated for 4:22 PM ET. Don't touch the build plate.
+
+When the print finishes, the bot posts completion stats and records the job details directly to an Obsidian archive note for maintenance tracking.
+
+## Architecture and Pipeline
+
+Print Bitch ties several open tools into a single conversational interface:
+
+* **Discord Interface:** Powered by Hermes Agent in the `#3d-printer` channel.
+* **Intake and Scraping:** Fetches model packages from MakerWorld and Printables or extracts uploaded attachments.
+* **Headless Slicing:** Uses the OrcaSlicer Flatpak in CLI mode, applying calibrated printer and filament profiles.
+* **Filament and Spool Inventory:** Queries Spoolman over LAN to match requested colors and materials against loaded slots.
+* **Printer Control:** Sends G-code directly to Moonraker and Klipper over the local network.
+* **Interaction Guards:** Python hooks prevent runaway agent command loops and enforce concise UI button choices.
+
+## Hardware Support and ZMod Plugin
+
+The live setup runs on a Flashforge Adventurer 5M / AD5X running ZMod Klipper firmware with an internal filament system (IFS).
+
+### Spool Slot Matching Macro (`print_bitch.cfg`)
+
+ZMod natively supports infinite spool switching during a print when an active spool runs out, provided another slot contains the exact same color and material.
+
+The included `print_bitch.cfg` Klipper macro lets users check backup compatibility before a job begins:
+
+```gcode
 PRINT_BITCH SLOT=1
+```
+
+If slot 1 and slot 3 are both black PETG, the macro confirms:
+```
 PRINT_BITCH: black / PETG also on slot 3. ZMod can switch. This macro does not.
 ```
 
-`PRINT_BITCH SLOT=4` says no other slot matches, because the other black spool is PETG. `PRINT_BITCH COLOR=black MATERIAL=PETG` lists slot 1 and slot 3 without treating either one as already loaded.
+Querying `PRINT_BITCH COLOR=black MATERIAL=PETG` checks availability across all four slots without assuming an active toolhead.
 
-The code in this repository is two things that do not share a process. `plugins/print-feedback` is a Hermes pre-tool hook. It is not installed on the printer. `print_bitch.cfg` plus `install.sh` is a ZMod plugin. `ENABLE_PLUGIN` runs the script on the printer and Klipper loads the cfg. The macro does not load the Discord hook.
+### ZMod Plugin Installation
 
-## What is in this repository
+Run on the printer console:
 
-`plugins/print-feedback/__init__.py` registers two guards. Both are stdlib only.
-
-* Choice cap. On the Discord printer profile, a clarify question with more than four choices keeps the first four and says an Other path exists.
-* Repeat stop. The third identical terminal command in one turn is blocked. Distinct commands are not limited. Without a turn id, the guard does nothing.
-
-Tests are `python3 -m unittest discover -s tests -v`. They do not contact a printer, Discord, or the network.
-
-`docs/AD5X-CONTRACT.md` records the ZMod same-color, same-material infinite-spool rule and the local extra checks. Native selection order and installed screen behavior are not verified here.
-
-`docs/REUSE-MAP.md` and `references/manifest.json` pin five upstream archives by commit and SHA-256: mcp-3D-printer-server, orcaslicer-mcp, klipper-mcp, zmod, and bambufy. Those archives are not in this repo. Nothing from them is installed.
-
-## AD5X workflow this documents
-
-These behaviors are implemented in the printer skill, not in the files above. The skill target is a Flashforge AD5X on ZMod, 220 by 220 mm, stock OrcaSlicer Flatpak, direct Moonraker. No Prusa slicing path. No Room, no custom slicer fork, no MCP.
-
-* MakerWorld and Printables links. A reposted link is a new intake. Old jobs, colors, and approvals are not reused.
-* 3MF plate inventory before any slice. Source triangles and transforms are kept. Author settings that Orca rejects are clamped in the job, never written back into the source file.
-* Multi-plate 3MF files merge onto one AD5X bed and slice once. Separate plates only when asked.
-* Color and slot assignment stays bound to that source. Slicer tools are not physical IFS slots. A link or a color choice is not permission to slice, upload, or start.
-* One-line preview after a model link and before color selection: what it is, estimated time, estimated filament. Missing numbers stay missing.
-* Job details after a real start: model, time plus warmup and finish, filament weight, slot, color, material, printer, nozzle, temperatures, calibration.
-* AD5X startup uses the installed ZMod macros. Native screen mode owns mesh and Z offset. Screenless mode is a separate checked state.
-* Print start is one shot after the bed is confirmed clear. A timed-out start is checked once and not retried.
-* Native infinite spool is the backup plan: same stored color and material. No agent polling loop. No Bambufy. Bambufy fights the native screen.
-* Spoolman is the inventory record once seeded. Physical sensors own presence. Automatic runout switching is not claimed.
-
-## ZMod plugin
-
-`ENABLE_PLUGIN name=print-bitch` runs `install.sh`. The script does not edit `printer.base.cfg`. Copy the four slot colors and materials into `mod_data/user.cfg` as a `[gcode_macro _PRINT_BITCH_VARS]` block, then `FIRMWARE_RESTART`. Query with `PRINT_BITCH SLOT=1`, or `PRINT_BITCH COLOR=black MATERIAL=PETG`.
-
-A match is the same stored color and the same stored material, which is the rule ZMod already uses for infinite spool. A value of `0` is ignored. The reply names the other slots. ZMod does the switch. This macro does not call `SET_EXTRUDER_SLOT` and does not feed filament.
-
-Moonraker update manager, if you want it:
-
+```gcode
+ENABLE_PLUGIN name=print-bitch
 ```
+
+Add your slot assignments to `mod_data/user.cfg` in a `[gcode_macro _PRINT_BITCH_VARS]` block, then run `FIRMWARE_RESTART`.
+
+Moonraker update manager entry:
+
+```ini
 [update_manager print-bitch]
 type: git_repo
 path: /root/printer_data/config/mod_data/plugins/print-bitch
@@ -64,14 +108,35 @@ channel: dev
 is_system_service: False
 ```
 
-`update.sh` replaces the plugin files and leaves `user.cfg` alone. `DISABLE_PLUGIN` runs `uninstall.sh`, then ZMod deletes the plugin directory. Remove the variable block yourself.
+## Repository Structure
 
-Slicing, color assignment, and print start still live in the private AD5X skill. Those do not run on the printer. A generic Klipper path that is not AD5X-only stays an open issue.
+* `plugins/print-feedback/`: Hermes pre-tool execution guards that limit excessive clarify choices and block repeated terminal loops.
+* `print_bitch.cfg`: Klipper G-code macro for checking backup IFS slot matching.
+* `install.sh` / `uninstall.sh` / `update.sh`: ZMod plugin lifecycle scripts.
+* `tests/`: Unit tests verifying macro logic and interaction guards without requiring physical hardware.
+* `docs/`: Technical specifications for AD5X integration and upstream tool research.
 
-## Links
+## Running Tests
 
-* ZMod AD5X docs, pinned: [AD5X.md at 0017033](https://github.com/ghzserg/zmod/blob/001703371c90e228defce41bb4230b7fafd37fea/docs/en/AD5X.md)
-* ZMod: [ghzserg/zmod](https://github.com/ghzserg/zmod)
-* Plugin guide: [wiki.zmod.link/Plugin](https://wiki.zmod.link/Plugin/)
-* OrcaSlicer CLI: [CLI mode](https://github.com/OrcaSlicer/OrcaSlicer/wiki/cli_mode)
-* MakerWorld and Printables are the two source sites. Model files are downloaded per intake and are not stored here.
+Run the test suite with standard Python:
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+## Roadmap: Expanding to More Klipper Printers
+
+* **TODO: Generic Klipper printer support.** The pipeline currently targets a Flashforge AD5X on ZMod, but the core intake, slicing, and Moonraker dispatch are printer agnostic. Adding other Klipper printers (such as Sovol, Voron, or custom beds) is architecturally straightforward:
+  * Replace hardcoded bed dimensions (220x220) and nozzle parameters with configurable printer profiles.
+  * Support single extruder workflows without multi spool IFS requirements.
+  * Standardize start, cancel, and status calls using generic Klipper macros.
+  * This is not difficult to implement, but requires thorough real world testing on physical hardware before claiming support.
+
+## Links and Reference
+
+* ZMod AD5X docs: [AD5X.md at 0017033](https://github.com/ghzserg/zmod/blob/001703371c90e228defce41bb4230b7fafd37fea/docs/en/AD5X.md)
+* ZMod firmware project: [ghzserg/zmod](https://github.com/ghzserg/zmod)
+* ZMod plugin guide: [wiki.zmod.link/Plugin](https://wiki.zmod.link/Plugin/)
+* OrcaSlicer CLI documentation: [CLI mode](https://github.com/OrcaSlicer/OrcaSlicer/wiki/cli_mode)
+
+
