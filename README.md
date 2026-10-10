@@ -2,7 +2,7 @@
 
 Discord intake and an AD5X print workflow for MakerWorld and Printables 3MF jobs.
 
-The code in this repository is a Hermes pre-tool hook. It is not a ZMod plugin and it does not talk to a printer. Slicing, color assignment, and print start live in the private AD5X skill that drives a stock OrcaSlicer Flatpak and Moonraker. That split is deliberate. A ZMod plugin runs on the printer as Klipper config. This hook runs in the agent, before a tool call.
+The code in this repository is two things that do not share a process. `plugins/print-feedback` is a Hermes pre-tool hook. It is not installed on the printer. `print_bitch.cfg` plus `install.sh` is a ZMod plugin. `ENABLE_PLUGIN` runs the script on the printer and Klipper loads the cfg. The macro reports matching IFS slots. It does not switch filament, and it does not load the Discord hook.
 
 ## What is in this repository
 
@@ -32,11 +32,28 @@ These behaviors are implemented in the printer skill, not in the files above. Th
 * Native infinite spool is the backup plan: same stored color and material. No agent polling loop. No Bambufy. Bambufy fights the native screen.
 * Spoolman is the inventory record once seeded. Physical sensors own presence. Automatic runout switching is not claimed.
 
-## Not a ZMod plugin
+## ZMod plugin
 
-ZMod installs a plugin with `ENABLE_PLUGIN`, then runs that repo's `install.sh`. The plugin is Klipper config, usually `name.cfg`, plus optional `uninstall.sh` and `update.sh`. See the [ZMod plugin guide](https://wiki.zmod.link/Plugin/) and the [g28_tenz example](https://github.com/ghzserg/g28_tenz).
+`ENABLE_PLUGIN name=print-bitch` runs `install.sh`. The script does not edit `printer.base.cfg`. Copy the four slot colors and materials into `mod_data/user.cfg` as a `[gcode_macro _PRINT_BITCH_VARS]` block, then `FIRMWARE_RESTART`. Query with `PRINT_BITCH SLOT=1`, or `PRINT_BITCH COLOR=black MATERIAL=PETG`.
 
-This repository has none of that. Turning the Discord hook into `install.sh` would put agent policy on the printer, which is the wrong machine. A printer-side plugin would be a new Klipper extra with its own install scripts. Whether any of this workflow belongs there is tracked as an open issue, including a generic Klipper path that is not AD5X-only.
+A match is the same stored color and the same stored material, which is the rule ZMod already uses for infinite spool. A value of `0` is ignored. The reply names the other slots. ZMod does the switch. This macro does not call `SET_EXTRUDER_SLOT` and does not feed filament.
+
+Moonraker update manager, if you want it:
+
+```
+[update_manager print-bitch]
+type: git_repo
+path: /root/printer_data/config/mod_data/plugins/print-bitch
+origin: https://github.com/catduckgnaf/print-bitch.git
+primary_branch: main
+managed_services: klipper
+channel: dev
+is_system_service: False
+```
+
+`update.sh` replaces the plugin files and leaves `user.cfg` alone. `DISABLE_PLUGIN` runs `uninstall.sh`, then ZMod deletes the plugin directory. Remove the variable block yourself.
+
+Slicing, color assignment, and print start still live in the private AD5X skill. Those do not run on the printer. A generic Klipper path that is not AD5X-only stays an open issue.
 
 ## Links
 
