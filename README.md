@@ -1,8 +1,21 @@
 # Print Bitch
 
-Discord intake and an AD5X print workflow for MakerWorld and Printables 3MF jobs.
+ZMod already switches to another IFS spool when the stored color and the stored material match. It does that during a print, after the active spool runs out. Nothing on the printer answers the question before you start: which other slots would that switch be able to use?
 
-The code in this repository is two things that do not share a process. `plugins/print-feedback` is a Hermes pre-tool hook. It is not installed on the printer. `print_bitch.cfg` plus `install.sh` is a ZMod plugin. `ENABLE_PLUGIN` runs the script on the printer and Klipper loads the cfg. The macro reports matching IFS slots. It does not switch filament, and it does not load the Discord hook.
+`PRINT_BITCH` answers that. It reads the four slot values you copied out of the COLOR menu and names the other slots with the same color and the same material. It does not change the loaded slot, call `SET_EXTRUDER_SLOT`, or feed filament. A `0` means the slot was never filled in and is ignored.
+
+## Example
+
+Slot 1 and slot 3 are black PETG. Slot 4 is black PLA. Slot 2 is empty.
+
+```
+PRINT_BITCH SLOT=1
+PRINT_BITCH: black / PETG also on slot 3. ZMod can switch. This macro does not.
+```
+
+`PRINT_BITCH SLOT=4` says no other slot matches, because the other black spool is PETG. `PRINT_BITCH COLOR=black MATERIAL=PETG` lists slot 1 and slot 3 without treating either one as already loaded.
+
+The code in this repository is two things that do not share a process. `plugins/print-feedback` is a Hermes pre-tool hook. It is not installed on the printer. `print_bitch.cfg` plus `install.sh` is a ZMod plugin. `ENABLE_PLUGIN` runs the script on the printer and Klipper loads the cfg. The macro does not load the Discord hook.
 
 ## What is in this repository
 
