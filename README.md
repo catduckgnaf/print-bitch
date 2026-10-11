@@ -53,6 +53,12 @@ Once someone confirms the bed is clear by clicking the button, the print starts 
 
 When the print finishes, the bot posts completion stats and records the job details directly to an Obsidian archive note for maintenance tracking.
 
+## Release history
+
+### 1.8.0 — Print Buddy public release
+
+This initial public release consolidates previously shipped MVP work: Discord model intake, guarded preparation and print staging, the AD5X spool compatibility macro, and portable print feedback guards. It also includes the AD5X implementation contract and setup guidance. The current release changes the public project/repository name to Print Buddy; printer behavior is unchanged.
+
 ## Architecture and Pipeline
 
 Print Buddy ties several open tools into a single conversational interface:
