@@ -1,14 +1,14 @@
-# Print Bitch
+# Print Buddy
 
 Drop a link. Drop a file. Let Discord handle the rest.
 
-Print Bitch is an automated 3D printing pipeline designed for Discord. It removes the desktop slicer, manual SD card shuffling, and confusing printer menus from household printing. Anyone in the house can drop a MakerWorld link, a Printables link, or a raw 3MF or STL file into a Discord channel, and the bot handles downloading, multi plate packing, color matching, headless slicing, and print staging.
+Print Buddy is an automated 3D printing pipeline designed for Discord. It removes the desktop slicer, manual SD card shuffling, and confusing printer menus from household printing. Anyone in the house can drop a MakerWorld link, a Printables link, or a raw 3MF or STL file into a Discord channel, and the bot handles downloading, multi plate packing, color matching, headless slicing, and print staging.
 
 ## Why This Exists: The Household Test
 
 Standard desktop 3D printing is built for hobbyists who enjoy tinkering with layer heights, tree supports, and temperature towers. It is terrible for anyone who just wants an object out of the printer.
 
-Print Bitch was built so catduck's wife could see a model on MakerWorld, drop the URL into `#3d-printer` on Discord, and get a finished print without ever launching OrcaSlicer, selecting printer profiles, or guessing which spool is loaded in which slot.
+Print Buddy was built so catduck's wife could see a model on MakerWorld, drop the URL into `#3d-printer` on Discord, and get a finished print without ever launching OrcaSlicer, selecting printer profiles, or guessing which spool is loaded in which slot.
 
 ## How It Works in Discord
 
@@ -24,7 +24,7 @@ A user posts a link or uploads a file into the `#3d-printer` channel:
 
 The bot responds in seconds with a plain English confirmation, an estimated preparation time, and a witty remark:
 
-> **Print Bitch:** Downloading the file from MakerWorld and prepping it for the printer, about 2 minutes. The desk organizer is already more structured than catduck's weekend plans.
+> **Print Buddy:** Downloading the file from MakerWorld and prepping it for the printer, about 2 minutes. The desk organizer is already more structured than catduck's weekend plans.
 
 ### 3. Automated preparation and job card
 
@@ -37,7 +37,7 @@ Behind the scenes, the pipeline:
 
 The bot posts the job summary with a single interactive button:
 
-> **Print Bitch:**
+> **Print Buddy:**
 > **Model:** Post it Note Holder with Stencils
 > **Filament:** Matte Black PLA (~48g)
 > **Estimated print time:** 1 hour 14 minutes
@@ -49,13 +49,13 @@ The bot posts the job summary with a single interactive button:
 
 Once someone confirms the bed is clear by clicking the button, the print starts immediately:
 
-> **Print Bitch:** Bed heating started. Job sent to Moonraker. Finish time estimated for 4:22 PM ET. Don't touch the build plate.
+> **Print Buddy:** Bed heating started. Job sent to Moonraker. Finish time estimated for 4:22 PM ET. Don't touch the build plate.
 
 When the print finishes, the bot posts completion stats and records the job details directly to an Obsidian archive note for maintenance tracking.
 
 ## Architecture and Pipeline
 
-Print Bitch ties several open tools into a single conversational interface:
+Print Buddy ties several open tools into a single conversational interface:
 
 * **Discord Interface:** Powered by Hermes Agent in the `#3d-printer` channel.
 * **Intake and Scraping:** Fetches model packages from MakerWorld and Printables or extracts uploaded attachments.
