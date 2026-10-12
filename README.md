@@ -55,6 +55,15 @@ When the print finishes, the bot posts completion stats and records the job deta
 
 ## Release history
 
+### 1.9.0 — Spool lifecycle management and print orchestration
+
+- **Spool lifecycle & usage suspension**: Mid-print filament runout and swap detection with debounced presence tracking, 10-minute continuous Discord nagging until confirmed, and automatic Moonraker filament usage charging freeze (`spool_id` cleared) during unconfirmed swaps to prevent charging either spool.
+- **One-way Spoolman to AD5X screen sync**: Direct sync pushing Spoolman slot assignments, color hex, and material type (with safe coercion of unsupported screen types like `PLA+` to `PLA`) to the printer via Z-Mod macros; native screen changes never overwrite Spoolman.
+- **Permanent chronological print numbering**: Fixed print IDs to guarantee permanent sequential print numbers across archive and history, ensuring `/print-again` identifiers remain stable and never shift when old jobs rotate.
+- **Multi-copy reprint queuing**: Extended `/print-again` with copy multipliers (`xN` / `N copies`, up to 20), individual completion prompts, bed-clear confirmations between plates, and queue cancellation (`/print-again stop`).
+- **Interactive Discord spool control**: Added `/spool` command suite (`/spool list`, `/spool change <slot> <spool#>`, `/spool new ...`, `/spool sync`).
+- **Test suite validation**: 605 tests passing across local unit, klipper contract, and regression suites.
+
 ### 1.8.0 — Print Buddy public release
 
 This initial public release consolidates previously shipped MVP work: Discord model intake, guarded preparation and print staging, the AD5X spool compatibility macro, and portable print feedback guards. It also includes the AD5X implementation contract and setup guidance. The current release changes the public project/repository name to Print Buddy; printer behavior is unchanged.
