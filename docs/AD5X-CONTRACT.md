@@ -20,3 +20,10 @@ AD5X-specific docs govern over generic Klipper recommendations. Preserve existin
 
 ## Status
 Contract delivered; runtime fallback integration and physical acceptance remain OPEN in issue #2. Existing hardening remains paused until coordinator release. Notify/Apprise audit is deferred, existing Discord behavior unchanged.
+
+## Motion boundaries, margin contract, and multi-plate intake (1.9.1)
+- **Physical sheet and motion limits**: The AD5X uses a 235x235 mm spring steel build plate. Klipper stepper travel reaches X [-20.0, 225.0] (245 mm total) and Y [-20.0, 232.0] (252 mm total).
+- **Edge margins**: Single-copy prints use a 1.0 mm bed margin; multi-copy prints use a 3.0 mm margin. Parts up to ~218x218 mm fit on the nominal 220x220 mm bed area without endstop triggering or frame collision.
+- **Multi-plate capacity evaluation**: Orca plate capacity tests multi-plate projects per-plate rather than across the combined canvas. If any plate exceeds the bed, binary search evaluates the minimal uniform scale ladder (e.g. 94%, 75%, 50%).
+- **Plate boundary preservation**: Scaled multi-plate projects preserve plate separation during slicing, support per-plate scale overrides, and group parts by `(plate_id, slot)`.
+- **Conversational continuity**: Affirmative replies ("Let's do it", "Print it", "Go ahead") automatically recover the candidate model link from conversation history. Failure messages omit prompts to resend links.

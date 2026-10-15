@@ -55,6 +55,14 @@ When the print finishes, the bot posts completion stats and records the job deta
 
 ## Release history
 
+### 1.9.1 — Hardware edge margin tuning, multi-plate fit scaling, and conversational link recovery
+
+- **Hardware edge margin relaxation**: Bed margins reduced to 1.0 mm (single-copy) and 3.0 mm (multi-copy), matching the FlashForge AD5X physical 235x235 mm build sheet and stepper bounds. Models up to ~218 mm fit and slice at 100% scale without artificial clipping or bed edge errors.
+- **Multi-plate capacity & fit evaluation**: Replaced blind multi-plate capacity pass with per-plate bounding box checks. Multi-plate 3MF models that exceed bed bounds now compute an optimal uniform scale ladder via binary search rather than calculating against the combined multi-plate canvas.
+- **Multi-plate slicing isolation**: Resolved an issue where scaled multi-plate jobs collapsed parts onto Plate 1. Multi-plate slice jobs now preserve plate separation, support per-plate scale overrides, and evaluate per-part fit options grouped by plate and slot.
+- **Conversational model link recovery**: Affirmative follow-ups ("Let's do it", "Print that", "Go ahead", "Yes") automatically recover the recently discussed model URL from conversation history, eliminating prompts to resend links.
+- **Test validation**: 213 unit and integration tests passing across geometry, adapter, multi-plate intake, and interaction guard suites.
+
 ### 1.9.0 — Spool lifecycle management and print orchestration
 
 - **Spool lifecycle & usage suspension**: Mid-print filament runout and swap detection with debounced presence tracking, 10-minute continuous Discord nagging until confirmed, and automatic Moonraker filament usage charging freeze (`spool_id` cleared) during unconfirmed swaps to prevent charging either spool.
